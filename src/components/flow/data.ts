@@ -1,0 +1,1 @@
+export const defaultBorderColor = 'rgba(100, 100, 100, 0.5)';
