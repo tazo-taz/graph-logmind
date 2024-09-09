@@ -1,4 +1,5 @@
 import {
+  addEdge,
   Background,
   Controls,
   EdgeTypes,
@@ -16,8 +17,9 @@ import AnalyticsIcon from './host-icons/analytics';
 import CloudIcon from './host-icons/cloud';
 import DbIcon from './host-icons/db';
 import WindowsIcon from './host-icons/windows';
-import { createMultipleNodesAndEdges } from './utils';
 import { NodeTypes } from 'reactflow';
+import { FetchedHostData } from './types';
+import { createMultipleNodesAndEdgesFromData } from './utils';
 
 const initBgColor = '#1A192B';
 
@@ -34,7 +36,11 @@ const edgeTypes = {
 
 const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
-const CustomNodeFlow = () => {
+type CustomNodeFlowProps = {
+  data: FetchedHostData[]
+}
+
+const CustomNodeFlow = ({ data }: CustomNodeFlowProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const ref = useRef<HTMLDivElement>(null);
@@ -67,8 +73,7 @@ const CustomNodeFlow = () => {
 
 
   useEffect(() => {
-    const { edges, nodes } = createMultipleNodesAndEdges(2, {
-      startNodeId: 1,
+    const { edges, nodes } = createMultipleNodesAndEdgesFromData(data, {
       mapData: ({ id }) => ({
         onClick: () => {
           handleClickHost(id)
@@ -80,6 +85,13 @@ const CustomNodeFlow = () => {
     setEdges(edges)
   }, []);
 
+  console.log({ nodes, edges });
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
+  );
+
   return (
     <ReactFlow
       ref={ref}
@@ -89,6 +101,7 @@ const CustomNodeFlow = () => {
       onEdgesChange={onEdgesChange}
       style={{ background: initBgColor }}
       nodeTypes={nodeTypes}
+      onConnect={onConnect}
       edgeTypes={edgeTypes}
       defaultViewport={defaultViewport}
       fitView

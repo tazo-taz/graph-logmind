@@ -9,10 +9,11 @@ type SectagonProps = {
   handleType: HandleType,
   onClick?: () => void,
   forcedColor?: string,
-  size?: number
+  size?: number,
+  title?: string,
 } & NodeProps
 
-function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderColor, size = 30 }: SectagonProps) {
+function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderColor, size = 30, title }: SectagonProps) {
 
   const renderHandle = () => {
     return (
@@ -74,7 +75,8 @@ function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderC
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          border: `1px solid ${forcedColor || color}`
+          border: `1px solid ${forcedColor || color}`,
+          boxShadow: `0 0 5px rgba(0, 0, 0, 0.5)`,
         }}
       >
         <Icon
@@ -82,6 +84,21 @@ function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderC
           color='white'
         />
       </div>
+      {title && <div style={{
+        textAlign: "center",
+        fontSize: 8,
+        marginTop: 3,
+        color: "white",
+        backgroundColor: "rgb(72, 72, 72)",
+        borderRadius: 1000,
+        fontFamily: "sans-serif",
+        position: "absolute",
+        left: "50%",
+        transform: "translateX(-50%)",
+        whiteSpace: "nowrap",
+        padding: "1px 5px 2px 5px",
+        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+      }}>{title}</div>}
       {renderHandle()}
     </>
   );

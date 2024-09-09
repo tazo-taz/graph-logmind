@@ -1,3 +1,5 @@
+import { FetchedHostData } from "./types";
+
 export const generateHorizontalTreeCoordinates = (itemsCount: number) => {
   const coords: { x: number, y: number }[] = []
 
@@ -53,23 +55,25 @@ export const generateCircularCoordinates = (itemsCount: number) => {
 
   while (coords.length < itemsCount) {
     const axisCount = initialAxisCount + i * deltaAxisCount
-    const initialAngle = Math.PI * 2 * Math.random()
+    const initialAngle = Math.PI * 2 * Math.random() * 0
 
     for (let j = 0; j < axisCount; j++) {
       if (coords.length >= itemsCount) {
         break
       }
       const shouldSpawn = Math.random() > 0.25
-      // console.log({ shouldSpawn, angle: toDeg(angle) });
 
       if (shouldSpawn) {
-        const angle = Math.PI * 2 / axisCount * j + initialAngle
+        const angle = (Math.PI * 2 / axisCount * j + initialAngle) % (Math.PI * 2)
         const length = initialLength + deltaLength * (i + 1)
 
         const x = Math.cos(angle) * length
         const y = Math.sin(angle) * length
 
-        coords.push({ x, y })
+        const distance = Math.hypot(x, y)
+        if (!(angle > 0 && angle < Math.PI && distance > 0 && distance < 60) && ![0, Math.PI / 2, Math.PI, 3 / 4 * Math.PI].includes(angle)) {
+          coords.push({ x, y })
+        }
       }
     }
     i++
@@ -89,56 +93,87 @@ type createNodesAndEdgesProps = {
   margin?: Partial<Vector>
 }
 
+class SourcesWithHosts extends Map<string, { index: number, data: (FetchedHostData)[] }> {
+  getHostsBySource(source: string) {
+    return this.get(source)
+  }
 
-export const createNodesAndEdges = ({ mapData, startNodeId, margin }: createNodesAndEdgesProps) => {
-  let nodeId = startNodeId
-  const marginX = margin?.x || 0
-  const marginY = margin?.y || 0
+  beenBefore(host: string, index: number) {
+    const beforeSources = [...this.values()]
+      .filter(({ index: i }) => i < index)
 
+    for (const { data } of beforeSources) {
+      if (data.some(({ host: h }) => h === host)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+}
+
+export const createNodesAndEdges = (data: SourcesWithHosts, key: string, { mapData }: createNodesAndEdgesProps) => {
+  const value = data.get(key)
+  if (!value) {
+    return { nodes: [], edges: [] }
+  }
   const newNodes: any[] = [{
-    id: `${startNodeId}`,
+    id: key,
     type: 'cloud',
     position: {
-      x: marginX,
-      y: marginY
+      x: 0,
+      y: 0
     },
   },]
   const newEdges: any[] = []
   const icons = ['windows', 'db', 'analytics']
 
-  const coords = generateCircularCoordinates(5)
+  const coords = generateCircularCoordinates(value.data.length)
 
-  for (let i = 0; i < coords.length; i++) {
-    const id = (++nodeId).toString()
+  for (const i in value.data) {
+    const item = value.data[i]
     const height = coords[i].y
     const width = coords[i].x
 
+    if (!data.beenBefore(item.host, value.index)) {
+      // console.log("adding node", item.host);
 
-    const node = {
-      id,
-      type: icons[Math.floor(Math.random() * icons.length)],
-      position: {
-        x: width + marginX,
-        y: height + marginY
-      },
-      data: {}
+      const node = {
+        id: item.host,
+        type: icons[Math.floor(Math.random() * icons.length)],
+        position: {
+          x: width,
+          y: height
+        },
+        data: {}
+      }
+      node.data = {
+        host: item,
+        ...(mapData && mapData({ ...node }))
+      }
+      newNodes.push(node)
     }
-    node.data = {
-      ...(mapData && mapData({ ...node }))
-    }
-    newNodes.push(node)
+
+    // console.log("adding edge", {
+    //   id: `edge-${item.host}-${key}`,
+    //   source: item.host,
+    //   target: key,
+    // });
+
+
 
     newEdges.push({
-      id: `edge-${nodeId}`,
-      source: startNodeId.toString(),
-      target: id,
+      id: `edge-${item.host}-${key}`,
+      target: item.host,
+      source: key,
       sourceHandle: "right",
       type: 'floating',
       // animated: true,
     })
-  }
 
-  return { nodes: newNodes, edges: newEdges, endNodeId: nodeId }
+  }
+  return { nodes: newNodes, edges: newEdges }
 }
 
 type getNodeLogic = (node: { position: Vector }, max: Vector) => Vector
@@ -184,17 +219,42 @@ export const applyMarginToNodes = (nodes: any[], margin: { x: number, y: number 
   })
 }
 
-export const createMultipleNodesAndEdges = (count: number, mapNode: createNodesAndEdgesProps) => {
+
+
+const groupByHostsBySource = (data: FetchedHostData[]) => {
+  const sourcesWithHosts = new SourcesWithHosts()
+
+  for (let i = 0; i < data.length; i++) {
+    for (let k = 0; k < data[i].index.length; k++) {
+      const source = sourcesWithHosts.get(data[i].index[k])
+
+      if (!source) {
+        sourcesWithHosts.set(data[i].index[k], { data: [data[i]], index: i })
+      } else {
+        source.data.push(data[i])
+      }
+    }
+  }
+
+  return sourcesWithHosts
+}
+
+export const createMultipleNodesAndEdgesFromData = (data: FetchedHostData[], mapNode: createNodesAndEdgesProps) => {
+  const sourcesWithHosts = groupByHostsBySource(data)
+  return createMultipleNodesAndEdges(sourcesWithHosts, mapNode)
+}
+
+export const createMultipleNodesAndEdges = (data: SourcesWithHosts, mapNode: createNodesAndEdgesProps) => {
   const allNodes: any[] = []
   const allEdges: any[] = []
-  let startNodeId = 1
   let rightestNode = { x: 0, y: 0 }
   let leftestNode = { x: 0, y: 0 }
 
-  for (let i = 0; i < count; i++) {
-    const { edges, nodes, endNodeId } = createNodesAndEdges({
+  const itemsCount = data.size
+  let i = 0;
+  for (const [key] of data) {
+    const { edges, nodes } = createNodesAndEdges(data, key, {
       ...mapNode,
-      startNodeId
     });
 
     leftestNode = getMapperNode(nodes, [getLeftestNodeLogic])[0]
@@ -204,13 +264,14 @@ export const createMultipleNodesAndEdges = (count: number, mapNode: createNodesA
       y: 0
     })
 
-    startNodeId = endNodeId + 1
-    if (i !== count - 1) {
+    if (i !== itemsCount - 1) {
       rightestNode = getMapperNode(nodes, [getRightestNodeLogic])[0]
     }
 
     allNodes.push(...nodes)
     allEdges.push(...edges)
+
+    i++
   }
 
   return {
