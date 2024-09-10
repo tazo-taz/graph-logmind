@@ -51,11 +51,11 @@ export const generateCircularCoordinates = (itemsCount: number) => {
   const deltaAxisCount = 4;
 
   const initialLength = 25
-  const deltaLength = 30
+  const deltaLength = 40
 
   while (coords.length < itemsCount) {
     const axisCount = initialAxisCount + i * deltaAxisCount
-    const initialAngle = Math.PI * 2 * Math.random() * 0
+    const initialAngle = Math.PI * 2 * Math.random()
 
     for (let j = 0; j < axisCount; j++) {
       if (coords.length >= itemsCount) {
@@ -89,8 +89,6 @@ type Vector = { x: number, y: number }
 
 type createNodesAndEdgesProps = {
   mapData?: ({ id, position }: { id: string, position: { x: number, y: number } }) => object,
-  startNodeId: number,
-  margin?: Partial<Vector>
 }
 
 class SourcesWithHosts extends Map<string, { index: number, data: (FetchedHostData)[] }> {
@@ -125,6 +123,9 @@ export const createNodesAndEdges = (data: SourcesWithHosts, key: string, { mapDa
       x: 0,
       y: 0
     },
+    data: {
+      title: key,
+    }
   },]
   const newEdges: any[] = []
   const icons = ['windows', 'db', 'analytics']
@@ -137,8 +138,6 @@ export const createNodesAndEdges = (data: SourcesWithHosts, key: string, { mapDa
     const width = coords[i].x
 
     if (!data.beenBefore(item.host, value.index)) {
-      // console.log("adding node", item.host);
-
       const node = {
         id: item.host,
         type: icons[Math.floor(Math.random() * icons.length)],
@@ -149,19 +148,11 @@ export const createNodesAndEdges = (data: SourcesWithHosts, key: string, { mapDa
         data: {}
       }
       node.data = {
-        host: item,
+        title: item.host,
         ...(mapData && mapData({ ...node }))
       }
       newNodes.push(node)
     }
-
-    // console.log("adding edge", {
-    //   id: `edge-${item.host}-${key}`,
-    //   source: item.host,
-    //   target: key,
-    // });
-
-
 
     newEdges.push({
       id: `edge-${item.host}-${key}`,
@@ -218,8 +209,6 @@ export const applyMarginToNodes = (nodes: any[], margin: { x: number, y: number 
     return node
   })
 }
-
-
 
 const groupByHostsBySource = (data: FetchedHostData[]) => {
   const sourcesWithHosts = new SourcesWithHosts()

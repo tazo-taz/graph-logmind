@@ -1,5 +1,4 @@
 import {
-  addEdge,
   Background,
   Controls,
   EdgeTypes,
@@ -11,13 +10,13 @@ import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useRef } from 'react';
 
 
+import { NodeTypes } from 'reactflow';
 import { defaultBorderColor } from './data';
 import FloatingEdge from './floating-edge-feature/FloatingEdge';
 import AnalyticsIcon from './host-icons/analytics';
 import CloudIcon from './host-icons/cloud';
 import DbIcon from './host-icons/db';
 import WindowsIcon from './host-icons/windows';
-import { NodeTypes } from 'reactflow';
 import { FetchedHostData } from './types';
 import { createMultipleNodesAndEdgesFromData } from './utils';
 
@@ -47,7 +46,7 @@ const CustomNodeFlow = ({ data }: CustomNodeFlowProps) => {
 
   const handleClickHost = useCallback((id: string) => {
     setNodes(newNodes => newNodes.map((node: any) => {
-      if (!node.data) return node
+      if (node.type === "cloud") return node
       if (node.id === id) {
         node.data.forcedColor = ''
       } else {
@@ -57,19 +56,19 @@ const CustomNodeFlow = ({ data }: CustomNodeFlowProps) => {
     }))
 
     setEdges(newEdges => {
-      const source = newEdges.find((edge: any) => edge.target === id).source
+      const sources = newEdges.filter((edge: any) => edge.target === id)
       return newEdges.map((edge: any) => {
         if (edge.target === id) {
           edge.style = { stroke: 'white' }
           edge.animated = true
-        } else if (edge.source === source) {
+        } else if (sources.find((source) => source.source === edge.source)) {
           edge.style = { stroke: defaultBorderColor }
           edge.animated = false
         }
         return { ...edge }
       })
     })
-  }, [])
+  }, [setEdges, setNodes])
 
 
   useEffect(() => {
@@ -83,14 +82,12 @@ const CustomNodeFlow = ({ data }: CustomNodeFlowProps) => {
 
     setNodes(nodes)
     setEdges(edges)
-  }, []);
+  }, [data, handleClickHost, setEdges, setNodes]);
 
-  console.log({ nodes, edges });
-
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
+  // const onConnect = useCallback(
+  //   (params) => setEdges((eds) => addEdge(params, eds)),
+  //   [setEdges],
+  // );
 
   return (
     <ReactFlow
@@ -101,7 +98,6 @@ const CustomNodeFlow = ({ data }: CustomNodeFlowProps) => {
       onEdgesChange={onEdgesChange}
       style={{ background: initBgColor }}
       nodeTypes={nodeTypes}
-      onConnect={onConnect}
       edgeTypes={edgeTypes}
       defaultViewport={defaultViewport}
       fitView

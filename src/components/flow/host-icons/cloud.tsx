@@ -11,7 +11,6 @@ export default function CloudIcon(props: IconType) {
       handleType="source"
       forcedColor=""
       size={35}
-      title="Cloud source node"
       {...props}
       {...("data" in props ? props.data as object : {})}
     />

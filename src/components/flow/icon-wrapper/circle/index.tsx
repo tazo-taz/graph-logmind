@@ -14,7 +14,6 @@ type SectagonProps = {
 } & NodeProps
 
 function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderColor, size = 30, title }: SectagonProps) {
-
   const renderHandle = () => {
     return (
       <>
@@ -86,7 +85,7 @@ function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderC
       </div>
       {title && <div style={{
         textAlign: "center",
-        fontSize: 8,
+        fontSize: size / 5,
         marginTop: 3,
         color: "white",
         backgroundColor: "rgb(72, 72, 72)",
@@ -96,7 +95,7 @@ function Circle({ Icon, color, handleType, onClick, forcedColor = defaultBorderC
         left: "50%",
         transform: "translateX(-50%)",
         whiteSpace: "nowrap",
-        padding: "1px 5px 2px 5px",
+        padding: "2px 5px",
         boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
       }}>{title}</div>}
       {renderHandle()}
