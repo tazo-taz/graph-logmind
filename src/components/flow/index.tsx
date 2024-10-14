@@ -20,7 +20,7 @@ import WindowsIcon from './host-icons/windows';
 import { FetchedHostData } from './types';
 import { createMultipleNodesAndEdgesFromData } from './utils';
 
-const initBgColor = '#1A192B';
+const initBgColor = 'white';
 
 const nodeTypes = {
   cloud: CloudIcon,
