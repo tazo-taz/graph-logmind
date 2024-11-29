@@ -31,7 +31,10 @@ function FloatingEdge({ id, source, target, markerEnd, style, ...data }) {
         className="react-flow__edge-path"
         d={edgePath}
         markerEnd={markerEnd}
-        style={style}
+        style={{
+          ...style,
+          stroke: 'black'
+        }}
       />
     </>
   );
